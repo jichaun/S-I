@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Rose Quartz 3D Space</title>
+    <title>Rose Quartz 3D Space - Top-Right Meteors</title>
     <style>
         :root {
             --pink-core: #ff85a1;
@@ -20,10 +20,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            perspective: 1200px; /* 3D 空间深度 */
+            perspective: 1200px;
         }
 
-        /* 1. 星空背景与流星 */
+        /* 1. 宇宙背景 */
         .universe {
             position: absolute;
             width: 100%;
@@ -42,24 +42,50 @@
 
         @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-        /* 流星效果 */
+        /* --- 流星特效层 --- */
+        .meteor-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         .shooting-star {
             position: absolute;
             width: 2px;
-            height: 80px;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,133,161,1));
+            height: 120px;
+            /* 渐变色：头部亮白，尾部粉色透明 */
+            background: linear-gradient(to top, rgba(255,255,255,0.8), var(--pink-core), rgba(255, 133, 161, 0));
             opacity: 0;
-            animation: shoot 4s infinite;
+            /* 关键：调整旋转角度，配合动画方向 */
+            transform: rotate(45deg); 
+            filter: drop-shadow(0 0 6px var(--pink-core));
+            animation: shoot-diagonal 2.5s ease-out forwards;
         }
 
-        @keyframes shoot {
-            0% { transform: translateY(-100px) translateX(0) rotate(45deg); opacity: 0; }
-            10% { opacity: 1; }
-            30% { transform: translateY(600px) translateX(600px) rotate(45deg); opacity: 0; }
-            100% { opacity: 0; }
+        /* 动画：从右上向左下运动 */
+        @keyframes shoot-diagonal {
+            0% { 
+                transform: translateX(0) translateY(0) rotate(45deg); 
+                opacity: 0; 
+            }
+            10% { 
+                opacity: 1; 
+            }
+            40% { 
+                /* 较大的位移确保划过感 */
+                transform: translateX(-800px) translateY(800px) rotate(45deg); 
+                opacity: 0; 
+            }
+            100% { 
+                opacity: 0; 
+            }
         }
 
-        /* 2. 主体3D心形容器 */
+        /* 2. 主体3D场景 */
         .scene {
             position: relative;
             width: 400px;
@@ -81,7 +107,7 @@
             transform-style: preserve-3d;
         }
 
-        /* 3. 底部霓虹光圈 */
+        /* 3. 地表光圈 */
         .floor-glow {
             position: absolute;
             bottom: -150px;
@@ -103,7 +129,6 @@
             50% { opacity: 0.8; transform: translateX(-50%) rotateX(75deg) scale(1.1); }
         }
 
-        /* 4. 文字样式 */
         .text-container {
             position: absolute;
             bottom: -60px;
@@ -120,20 +145,17 @@
 <body>
 
     <div class="universe" id="universe"></div>
+    <div class="meteor-container" id="meteor-container"></div>
 
     <div class="scene" id="scene">
         <div id="heart-layers"></div>
-        
         <div class="floor-glow"></div>
         <div class="floor-glow inner"></div>
-        
-        <div class="text-container">
-            ROSE QUARTZ ESSENCE
-        </div>
+        <div class="text-container">ROSE QUARTZ ESSENCE</div>
     </div>
 
     <script>
-        // 初始化背景星空
+        // 1. 初始化星空背景
         const universe = document.getElementById('universe');
         for (let i = 0; i < 100; i++) {
             const star = document.createElement('div');
@@ -147,17 +169,36 @@
             universe.appendChild(star);
         }
 
-        // 初始化流星
-        setInterval(() => {
+        // 2. 动态生成右上向左下坠落的流星
+        const meteorContainer = document.getElementById('meteor-container');
+        function createMeteor() {
             const meteor = document.createElement('div');
             meteor.className = 'shooting-star';
-            meteor.style.left = Math.random() * 80 + '%';
-            meteor.style.top = '0';
-            universe.appendChild(meteor);
-            setTimeout(() => meteor.remove(), 4000);
-        }, 2000);
+            
+            // 随机起始点锚定在右上侧（屏幕宽度的60%-110%区间）
+            const startX = Math.random() * 50 + 60; 
+            const startY = Math.random() * 30 - 20; 
+            
+            meteor.style.left = startX + '%';
+            meteor.style.top = startY + '%';
+            
+            meteorContainer.appendChild(meteor);
+            
+            // 动画结束后销毁
+            setTimeout(() => {
+                meteor.remove();
+            }, 2500);
+        }
 
-        // 生成3D嵌套心形 (15层)
+        // 控制生成频率
+        function startMeteors() {
+            createMeteor();
+            // 2-5秒随机间歇生成下一颗
+            setTimeout(startMeteors, Math.random() * 3000 + 2000);
+        }
+        startMeteors();
+
+        // 3. 生成3D嵌套心形 (15层)
         const layersBox = document.getElementById('heart-layers');
         const heartPath = "M100,165 C100,165 25,120 25,72 C25,45 52,35 75,48 C85,54 95,68 100,78 C105,68 115,54 125,48 C148,35 175,45 175,72 C175,115 100,165 100,165 Z";
         
@@ -166,7 +207,6 @@
             svg.setAttribute("viewBox", "0 0 200 200");
             svg.classList.add("heart-layer");
             
-            // 核心层叠逻辑
             const depth = (i - 7.5) * 5; 
             const scale = 1 - Math.abs(i - 7.5) * 0.03;
             svg.style.transform = `translateZ(${depth}px) scale(${scale})`;
@@ -174,13 +214,13 @@
             
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             path.setAttribute("d", heartPath);
-            if (i === 0 || i === 14) path.style.stroke = "#fff"; // 边缘亮边
+            if (i === 0 || i === 14) path.style.stroke = "#fff";
 
             svg.appendChild(path);
             layersBox.appendChild(svg);
         }
 
-        // 鼠标交互控制视角
+        // 4. 鼠标视角交互
         const scene = document.getElementById('scene');
         document.addEventListener('mousemove', (e) => {
             const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
