@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Rose Quartz 3D Space</title>
+    <style>
+        :root {
+            --pink-core: #ff85a1;
+            --pink-glow: rgba(255, 133, 161, 0.6);
+            --bg-color: #0d0208;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1200px; /* 3D 空间深度 */
+        }
+
+        /* 1. 星空背景与流星 */
+        .universe {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1a050d 0%, #050103 100%);
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--d) infinite ease-in-out;
+        }
+
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* 流星效果 */
+        .shooting-star {
+            position: absolute;
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,133,161,1));
+            opacity: 0;
+            animation: shoot 4s infinite;
+        }
+
+        @keyframes shoot {
+            0% { transform: translateY(-100px) translateX(0) rotate(45deg); opacity: 0; }
+            10% { opacity: 1; }
+            30% { transform: translateY(600px) translateX(600px) rotate(45deg); opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* 2. 主体3D心形容器 */
+        .scene {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+
+        .heart-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: var(--pink-core);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 10px var(--pink-glow));
+            transform-style: preserve-3d;
+        }
+
+        /* 3. 底部霓虹光圈 */
+        .floor-glow {
+            position: absolute;
+            bottom: -150px;
+            left: 50%;
+            transform: translateX(-50%) rotateX(75deg);
+            width: 300px;
+            height: 300px;
+            border: 8px solid var(--pink-core);
+            border-radius: 50%;
+            filter: blur(5px) drop-shadow(0 0 30px var(--pink-glow));
+            opacity: 0.6;
+            animation: ringPulse 3s infinite ease-in-out;
+        }
+
+        .floor-glow.inner { width: 220px; height: 220px; animation-delay: 0.5s; }
+
+        @keyframes ringPulse {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%) rotateX(75deg) scale(0.9); }
+            50% { opacity: 0.8; transform: translateX(-50%) rotateX(75deg) scale(1.1); }
+        }
+
+        /* 4. 文字样式 */
+        .text-container {
+            position: absolute;
+            bottom: -60px;
+            width: 100%;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            color: #ffb3c1;
+            letter-spacing: 12px;
+            font-size: 14px;
+            text-shadow: 0 0 10px var(--pink-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="universe" id="universe"></div>
+
+    <div class="scene" id="scene">
+        <div id="heart-layers"></div>
+        
+        <div class="floor-glow"></div>
+        <div class="floor-glow inner"></div>
+        
+        <div class="text-container">
+            ROSE QUARTZ ESSENCE
+        </div>
+    </div>
+
+    <script>
+        // 初始化背景星空
+        const universe = document.getElementById('universe');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 'px';
+            star.style.width = size;
+            star.style.height = size;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.setProperty('--d', Math.random() * 3 + 2 + 's');
+            universe.appendChild(star);
+        }
+
+        // 初始化流星
+        setInterval(() => {
+            const meteor = document.createElement('div');
+            meteor.className = 'shooting-star';
+            meteor.style.left = Math.random() * 80 + '%';
+            meteor.style.top = '0';
+            universe.appendChild(meteor);
+            setTimeout(() => meteor.remove(), 4000);
+        }, 2000);
+
+        // 生成3D嵌套心形 (15层)
+        const layersBox = document.getElementById('heart-layers');
+        const heartPath = "M100,165 C100,165 25,120 25,72 C25,45 52,35 75,48 C85,54 95,68 100,78 C105,68 115,54 125,48 C148,35 175,45 175,72 C175,115 100,165 100,165 Z";
+        
+        for (let i = 0; i < 15; i++) {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", "0 0 200 200");
+            svg.classList.add("heart-layer");
+            
+            // 核心层叠逻辑
+            const depth = (i - 7.5) * 5; 
+            const scale = 1 - Math.abs(i - 7.5) * 0.03;
+            svg.style.transform = `translateZ(${depth}px) scale(${scale})`;
+            svg.style.opacity = 1 - Math.abs(i - 7.5) * 0.1;
+            
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", heartPath);
+            if (i === 0 || i === 14) path.style.stroke = "#fff"; // 边缘亮边
+
+            svg.appendChild(path);
+            layersBox.appendChild(svg);
+        }
+
+        // 鼠标交互控制视角
+        const scene = document.getElementById('scene');
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
+            scene.style.transform = `rotateY(${-xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+    </script>
+</body>
+</html>
