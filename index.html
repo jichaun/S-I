@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Rose Quartz 3D Space</title>
+    <title>Rose Quartz 3D - Pro Edition</title>
     <style>
         :root {
             --pink-core: #ff85a1;
@@ -21,9 +21,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 开启 3D 硬件加速 */
             perspective: 1200px;
+            /* 改善手机端字体渲染 */
             -webkit-font-smoothing: antialiased;
+            /* 禁止系统默认触摸行为（如翻页） */
+            touch-action: none; 
         }
 
         /* 宇宙背景 */
@@ -41,12 +43,11 @@
             border-radius: 50%;
             opacity: 0.5;
             animation: twinkle var(--d) infinite ease-in-out;
-            will-change: opacity;
         }
 
         @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-        /* 流星特效层 */
+        /* 流星特效 */
         .meteor-container {
             position: absolute;
             top: 0; left: 0;
@@ -68,24 +69,25 @@
         }
 
         @keyframes shoot-diagonal {
-            0% { transform: translateX(0) translateY(0) rotate(45deg); opacity: 0; }
+            0% { transform: translate(0, 0) rotate(45deg); opacity: 0; }
             10% { opacity: 1; }
-            40% { transform: translateX(-800px) translateY(800px) rotate(45deg); opacity: 0; }
+            40% { transform: translate(-800px, 800px) rotate(45deg); opacity: 0; }
             100% { opacity: 0; }
         }
 
-        /* 3D场景容器 */
+        /* 3D主体 */
         .scene {
             position: relative;
-            /* 使用 vw/vh 确保在手机上比例协调 */
             width: 80vw;
             height: 80vw;
             max-width: 400px;
             max-height: 400px;
             z-index: 10;
             transform-style: preserve-3d;
-            transition: transform 0.2s ease-out;
+            /* 缩短 transition 提高跟手性 */
+            transition: transform 0.08s ease-out; 
             will-change: transform;
+            backface-visibility: hidden;
         }
 
         .heart-layer {
@@ -96,16 +98,15 @@
             stroke: var(--pink-core);
             stroke-width: 3;
             stroke-linecap: round;
-            /* 手机端抗锯齿增强 */
-            shape-rendering: geometricPrecision;
             filter: drop-shadow(0 0 8px var(--pink-glow));
             transform-style: preserve-3d;
+            shape-rendering: geometricPrecision;
         }
 
-        /* 底部霓虹光圈 */
+        /* 底部霓虹圈 */
         .floor-glow {
             position: absolute;
-            bottom: -120px;
+            bottom: -100px;
             left: 50%;
             transform: translateX(-50%) rotateX(75deg);
             width: 60vw;
@@ -128,15 +129,14 @@
 
         .text-container {
             position: absolute;
-            bottom: -80px;
+            bottom: -70px;
             width: 100%;
             text-align: center;
-            font-family: 'Cinzel', serif, "PingFang SC";
+            font-family: 'Cinzel', serif;
             color: #ffb3c1;
             letter-spacing: 0.5em;
             font-size: 12px;
             text-shadow: 0 0 10px var(--pink-glow);
-            white-space: nowrap;
         }
     </style>
 </head>
@@ -153,12 +153,9 @@
     </div>
 
     <script>
-        // 1. 高清画质适配 (High DPI Scaling)
-        const dpr = window.devicePixelRatio || 1;
-        
-        // 初始化星空
+        // 1. 初始化星空
         const universe = document.getElementById('universe');
-        const starCount = window.innerWidth < 768 ? 60 : 120; // 手机端减少数量保证性能
+        const starCount = window.innerWidth < 768 ? 60 : 120;
         for (let i = 0; i < starCount; i++) {
             const star = document.createElement('div');
             star.className = 'star';
@@ -171,7 +168,7 @@
             universe.appendChild(star);
         }
 
-        // 2. 流星逻辑 (右上向左下)
+        // 2. 流星生成 (右上 -> 左下)
         const meteorContainer = document.getElementById('meteor-container');
         function createMeteor() {
             const meteor = document.createElement('div');
@@ -181,14 +178,13 @@
             meteorContainer.appendChild(meteor);
             setTimeout(() => meteor.remove(), 2500);
         }
-
         function startMeteors() {
             createMeteor();
-            setTimeout(startMeteors, Math.random() * 4000 + 3000);
+            setTimeout(startMeteors, Math.random() * 3000 + 2000);
         }
         startMeteors();
 
-        // 3. 生成 3D 嵌套心形
+        // 3. 绘制3D心形层
         const layersBox = document.getElementById('heart-layers');
         const heartPath = "M100,165 C100,165 25,120 25,72 C25,45 52,35 75,48 C85,54 95,68 100,78 C105,68 115,54 125,48 C148,35 175,45 175,72 C175,115 100,165 100,165 Z";
         
@@ -197,7 +193,7 @@
             svg.setAttribute("viewBox", "0 0 200 200");
             svg.classList.add("heart-layer");
             
-            const depth = (i - 7.5) * (window.innerWidth < 768 ? 3 : 5); // 手机端缩减层深
+            const depth = (i - 7.5) * (window.innerWidth < 768 ? 4 : 6); 
             const scale = 1 - Math.abs(i - 7.5) * 0.03;
             svg.style.transform = `translateZ(${depth}px) scale(${scale})`;
             svg.style.opacity = 1 - Math.abs(i - 7.5) * 0.1;
@@ -205,28 +201,40 @@
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             path.setAttribute("d", heartPath);
             if (i === 0 || i === 14) path.style.stroke = "#fff";
-
             svg.appendChild(path);
             layersBox.appendChild(svg);
         }
 
-        // 4. 交互控制 (兼容触摸与鼠标)
+        // 4. 高灵敏度交互逻辑
         const scene = document.getElementById('scene');
+        let ticking = false;
+
         function updatePerspective(x, y) {
-            const xAxis = (window.innerWidth / 2 - x) / 15;
-            const yAxis = (window.innerHeight / 2 - y) / 15;
+            // 降低分母数值，极大提升跟手灵敏度
+            const sensitivity = window.innerWidth < 768 ? 6 : 12; 
+            const xAxis = (window.innerWidth / 2 - x) / sensitivity;
+            const yAxis = (window.innerHeight / 2 - y) / sensitivity;
             scene.style.transform = `rotateY(${-xAxis}deg) rotateX(${yAxis}deg)`;
         }
 
-        document.addEventListener('mousemove', (e) => updatePerspective(e.pageX, e.pageY));
+        // 帧同步处理，防止手机端高频触发卡顿
+        function onMove(x, y) {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    updatePerspective(x, y);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => onMove(e.pageX, e.pageY));
         
-        // 手机端触摸交互
         document.addEventListener('touchmove', (e) => {
-            if(e.touches.length > 0) {
-                updatePerspective(e.touches[0].pageX, e.touches[0].pageY);
+            if (e.touches.length > 0) {
+                onMove(e.touches[0].pageX, e.touches[0].pageY);
             }
         }, { passive: true });
     </script>
 </body>
 </html>
-
